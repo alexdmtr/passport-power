@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { PassportRequirement } from "./page";
 
 // const socket = new WebSocket('https://echo.websocket.org/')

@@ -26,7 +26,7 @@ export default function Home() {
           height={38}
           priority
         />
-        <PassportPicker requirements={requirements} />ol>
+        <PassportPicker requirements={requirements} />
 
         <div className={styles.ctas}>
           <a
