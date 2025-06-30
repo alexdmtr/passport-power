@@ -11,7 +11,7 @@ export type PassportRequirement = {
   Requirement: string;
 }
 
-const fileContents = fs.readFileSync(path.join(process.cwd(), 'libs', 'passport-index-dataset', 'passport-index-tidy.csv'), 'utf8');
+const fileContents = fs.readFileSync(path.join(process.cwd(), 'src', 'data', 'passport-index-tidy.csv'), 'utf8');
 const requirements = Papa.parse<PassportRequirement>(fileContents, { header: true }).data;
 
 export default function Home() {
