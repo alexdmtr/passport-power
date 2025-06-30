@@ -1,5 +1,18 @@
 import Image from "next/image";
 import styles from "./page.module.css";
+import Papa from 'papaparse'
+import fs from 'fs';
+import path from "path";
+import PassportPicker from "./PassportPicker";
+
+export type PassportRequirement = {
+  Passport: string;
+  Destination: string;
+  Requirement: string;
+}
+
+const fileContents = fs.readFileSync(path.join(process.cwd(), 'libs', 'passport-index-dataset', 'passport-index-tidy.csv'), 'utf8');
+const requirements = Papa.parse<PassportRequirement>(fileContents, { header: true }).data;
 
 export default function Home() {
   return (
@@ -13,12 +26,7 @@ export default function Home() {
           height={38}
           priority
         />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+        <PassportPicker requirements={requirements} />ol>
 
         <div className={styles.ctas}>
           <a
