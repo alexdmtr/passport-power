@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Passport Pwoer",
-  description: "Understand the power of your passport",
+  title: "Passport Power",
+  description: "Unlock the power of your passport",
 };
 
 export default function RootLayout({
