@@ -1,7 +1,7 @@
 import Image from "next/image";
 import styles from "./page.module.css";
-import Papa from 'papaparse'
-import fs from 'fs';
+import Papa from "papaparse";
+import fs from "fs";
 import path from "path";
 import PassportPicker from "./PassportPicker";
 
@@ -9,10 +9,15 @@ export type PassportRequirement = {
   Passport: string;
   Destination: string;
   Requirement: string;
-}
+};
 
-const fileContents = fs.readFileSync(path.join(process.cwd(), 'src', 'data', 'passport-index-tidy.csv'), 'utf8');
-const requirements = Papa.parse<PassportRequirement>(fileContents, { header: true }).data;
+const fileContents = fs.readFileSync(
+  path.join(process.cwd(), "src", "data", "passport-index-tidy.csv"),
+  "utf8",
+);
+const requirements = Papa.parse<PassportRequirement>(fileContents, {
+  header: true,
+}).data;
 
 export default function Home() {
   return (
