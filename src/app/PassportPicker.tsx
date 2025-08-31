@@ -21,15 +21,18 @@ export default function PassportPicker({ requirements }: PassportPickerProps) {
       ),
     [passports, filter],
   );
-  const countryIcon = useCallback((countryName: string) => {
-    const code = requirements
-      .find((req) => req.Passport === countryName)
-      ?.ISO2_Code?.toUpperCase();
+  const countryIcon = useCallback(
+    (countryName: string) => {
+      const code = requirements
+        .find((req) => req.Passport === countryName)
+        ?.ISO2_Code?.toUpperCase();
 
-    return code && countryIcons[code as keyof typeof countryIcons]
-      ? countryIcons[code as keyof typeof countryIcons]
-      : (props: any) => null;
-  }, []);
+      return code && countryIcons[code as keyof typeof countryIcons]
+        ? countryIcons[code as keyof typeof countryIcons]
+        : () => null;
+    },
+    [requirements],
+  );
   console.log(passports);
 
   const [selectedPassport, setSelectedPassport] = useState<string | undefined>(
