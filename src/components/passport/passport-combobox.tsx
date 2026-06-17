@@ -1,19 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronsUpDown, Search } from "lucide-react";
+import { Command as CommandPrimitive } from "cmdk";
+import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PassportListItem } from "@/lib/passport";
-import { Button } from "@/components/ui/button";
 import {
-  Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Flag } from "./flag";
 
 export function PassportCombobox({
@@ -25,41 +22,56 @@ export function PassportCombobox({
   selected?: PassportListItem;
   onSelect: (passport: PassportListItem) => void;
 }) {
+  const [query, setQuery] = useState(selected?.name ?? "");
   const [open, setOpen] = useState(false);
 
+  // Show the dropdown only once the user is actively typing, so the default
+  // state is a clean, focused input inviting them to type.
+  const showList = open && query.trim().length > 0;
+  const showFlag = selected && query === selected.name;
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="h-12 w-full justify-between px-3.5 text-base"
-        >
-          {selected ? (
-            <span className="flex items-center gap-2.5">
-              <Flag
-                code={selected.code}
-                label={selected.name}
-                className="h-[18px] w-[26px]"
-              />
-              {selected.name}
-            </span>
-          ) : (
-            <span className="text-muted-foreground flex items-center gap-2.5">
-              <Search className="size-4" />
-              Search your passport country…
-            </span>
-          )}
-          <ChevronsUpDown className="text-muted-foreground size-4 shrink-0" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="w-[var(--radix-popover-trigger-width)] p-0"
+    <CommandPrimitive className="relative overflow-visible bg-transparent">
+      <div
+        className={cn(
+          "border-input bg-background flex h-12 items-center gap-2.5 rounded-xl border px-3.5 transition-colors",
+          "focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-3",
+        )}
       >
-        <Command>
-          <CommandInput placeholder="Type a country…" />
+        {showFlag ? (
+          <Flag
+            code={selected.code}
+            label={selected.name}
+            className="h-[18px] w-[26px] shrink-0"
+          />
+        ) : (
+          <Search className="text-muted-foreground size-4 shrink-0" />
+        )}
+        <CommandPrimitive.Input
+          autoFocus
+          value={query}
+          onValueChange={(value) => {
+            setQuery(value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setOpen(false);
+          }}
+          placeholder="Type a country…"
+          aria-label="Search your passport country"
+          className="placeholder:text-muted-foreground flex-1 bg-transparent text-base outline-none"
+        />
+      </div>
+
+      {showList && (
+        <div
+          // Keep focus on the input so a click on an item registers before
+          // the input's blur would close the list.
+          onMouseDown={(e) => e.preventDefault()}
+          className="bg-popover text-popover-foreground absolute z-50 mt-2 w-full rounded-xl border p-1 shadow-md"
+        >
           <CommandList>
             <CommandEmpty>No matching country.</CommandEmpty>
             <CommandGroup>
@@ -69,6 +81,7 @@ export function PassportCombobox({
                   value={passport.name}
                   onSelect={() => {
                     onSelect(passport);
+                    setQuery(passport.name);
                     setOpen(false);
                   }}
                   className="gap-2.5"
@@ -79,20 +92,12 @@ export function PassportCombobox({
                     className="h-[18px] w-[26px]"
                   />
                   <span className="flex-1">{passport.name}</span>
-                  <Check
-                    className={cn(
-                      "size-4",
-                      selected?.name === passport.name
-                        ? "opacity-100"
-                        : "opacity-0",
-                    )}
-                  />
                 </CommandItem>
               ))}
             </CommandGroup>
           </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+        </div>
+      )}
+    </CommandPrimitive>
   );
 }
