@@ -15,23 +15,25 @@ import { Flag } from "./flag";
 
 export function DestinationList({
   destinations,
-  filter,
-  onFilter,
+  selected,
+  onToggle,
+  onSelectAll,
 }: {
   destinations: Destination[];
-  filter: Cat | "all";
-  onFilter: (next: Cat | "all") => void;
+  selected: Set<Cat>;
+  onToggle: (cat: Cat) => void;
+  onSelectAll: () => void;
 }) {
   const [query, setQuery] = useState("");
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return destinations.filter((d) => {
-      if (filter !== "all" && d.category !== filter) return false;
+      if (!selected.has(d.category)) return false;
       if (q && !d.name.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [destinations, filter, query]);
+  }, [destinations, selected, query]);
 
   return (
     <>
@@ -56,7 +58,10 @@ export function DestinationList({
 
       {/* Filter pills */}
       <div className="mb-5 flex flex-wrap gap-2">
-        <FilterPill active={filter === "all"} onClick={() => onFilter("all")}>
+        <FilterPill
+          active={selected.size === STAT_ORDER.length}
+          onClick={onSelectAll}
+        >
           All
         </FilterPill>
         {STAT_ORDER.map((cat) => {
@@ -64,8 +69,8 @@ export function DestinationList({
           return (
             <FilterPill
               key={cat}
-              active={filter === cat}
-              onClick={() => onFilter(filter === cat ? "all" : cat)}
+              active={selected.has(cat)}
+              onClick={() => onToggle(cat)}
             >
               <span className={cn("size-2 rounded-full", meta.dot)} />
               {meta.label}

@@ -51,6 +51,12 @@ export const STAT_ORDER: Cat[] = [
   "none",
 ];
 
+/**
+ * Categories reachable without arranging a visa beforehand — the same set that
+ * makes up the mobility score. Used as the default filter selection.
+ */
+export const MOBILITY_CATS: Cat[] = ["free", "arrival", "eta"];
+
 export const CATEGORY_META: Record<
   Cat,
   { label: string; dot: string; badge: string }
