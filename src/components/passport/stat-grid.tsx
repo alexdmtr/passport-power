@@ -5,18 +5,18 @@ import { CATEGORY_META, STAT_ORDER, type Cat } from "@/lib/passport";
 
 export function StatGrid({
   counts,
-  active,
+  selected,
   onToggle,
 }: {
   counts: Record<Cat, number>;
-  active: Cat | "all";
+  selected: Set<Cat>;
   onToggle: (cat: Cat) => void;
 }) {
   return (
     <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
       {STAT_ORDER.map((cat) => {
         const meta = CATEGORY_META[cat];
-        const isActive = active === cat;
+        const isActive = selected.has(cat);
         return (
           <button
             key={cat}

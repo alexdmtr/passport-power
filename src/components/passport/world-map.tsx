@@ -48,12 +48,12 @@ type Hovered = {
 
 export function WorldMap({
   destinations,
-  filter,
+  selected,
   homeCode,
   homeName,
 }: {
   destinations: Destination[];
-  filter: Cat | "all";
+  selected: Set<Cat>;
   homeCode?: string;
   homeName?: string;
 }) {
@@ -86,13 +86,12 @@ export function WorldMap({
               const dest = iso2 ? byIso2.get(iso2) : undefined;
               const cat = dest?.category;
 
-              // Faded when a filter is active and this country isn't in it
-              // (countries with no data are always muted).
-              const faded = filter !== "all" && cat !== filter;
-              const fill =
-                cat && !faded
-                  ? `var(--cat-${cat}-fg)`
-                  : "var(--map-land)";
+              // Colored when this country's category is in the selected set;
+              // every other country (filtered out or no data) is muted land.
+              const inFilter = !!cat && selected.has(cat);
+              const fill = inFilter
+                ? `var(--cat-${cat}-fg)`
+                : "var(--map-land)";
 
               return (
                 <path
@@ -103,10 +102,7 @@ export function WorldMap({
                     stroke: isHome ? "var(--primary)" : "var(--card)",
                     strokeWidth: isHome ? 1.5 : 0.5,
                   }}
-                  className={cn(
-                    "transition-[fill,opacity] duration-200 hover:opacity-80",
-                    faded && "opacity-40",
-                  )}
+                  className="transition-[fill] duration-200 hover:opacity-80"
                   onMouseMove={(e) => {
                     const box =
                       e.currentTarget.ownerSVGElement?.parentElement?.getBoundingClientRect();

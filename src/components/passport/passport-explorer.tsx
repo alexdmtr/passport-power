@@ -4,10 +4,12 @@ import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Globe, List, Map } from "lucide-react";
 import { loadPassportDetail } from "@/app/actions";
-import type {
-  Cat,
-  PassportDetail,
-  PassportListItem,
+import {
+  MOBILITY_CATS,
+  STAT_ORDER,
+  type Cat,
+  type PassportDetail,
+  type PassportListItem,
 } from "@/lib/passport";
 import { cn } from "@/lib/utils";
 import { PassportCombobox } from "./passport-combobox";
@@ -40,8 +42,19 @@ export function PassportExplorer({
   // Only shown for genuinely slow loads — fast loads (the common case) swap
   // straight to content so the skeleton never flickers.
   const [showSkeleton, setShowSkeleton] = useState(false);
-  const [filter, setFilter] = useState<Cat | "all">("free");
+  // Which visa categories are visible. Multi-select; defaults to the mobility
+  // categories (entry without a prior visa). Shared by the map and the list.
+  const [filter, setFilter] = useState<Set<Cat>>(() => new Set(MOBILITY_CATS));
   const [viewMode, setViewMode] = useState<ViewMode>("map");
+
+  const toggleCat = (cat: Cat) =>
+    setFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  const selectAll = () => setFilter(new Set(STAT_ORDER));
   // Guards against an earlier (slower) request overwriting a newer selection.
   const requestId = useRef(0);
   // Read in handleSelect without making it a dependency / going stale.
@@ -50,7 +63,7 @@ export function PassportExplorer({
 
   async function handleSelect(passport: PassportListItem) {
     setSelected(passport);
-    setFilter("free");
+    setFilter(new Set(MOBILITY_CATS));
     const id = ++requestId.current;
 
     // Show the skeleton only if we have nothing on screen yet AND the load
@@ -111,8 +124,8 @@ export function PassportExplorer({
           <ScoreSummary detail={detail} />
           <StatGrid
             counts={detail.counts}
-            active={filter}
-            onToggle={(cat) => setFilter((f) => (f === cat ? "all" : cat))}
+            selected={filter}
+            onToggle={toggleCat}
           />
 
           {/* View toggle */}
@@ -137,7 +150,7 @@ export function PassportExplorer({
             <div className="mt-4">
               <WorldMap
                 destinations={detail.destinations}
-                filter={filter}
+                selected={filter}
                 homeCode={detail.code}
                 homeName={detail.name}
               />
@@ -145,8 +158,9 @@ export function PassportExplorer({
           ) : (
             <DestinationList
               destinations={detail.destinations}
-              filter={filter}
-              onFilter={setFilter}
+              selected={filter}
+              onToggle={toggleCat}
+              onSelectAll={selectAll}
             />
           )}
         </section>
