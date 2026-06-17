@@ -119,6 +119,9 @@
   --cat-required-fg: #c0344a;
   --cat-none-bg: #eceef3;
   --cat-none-fg: #5b6478;
+
+  /* World map: blank (no-data) land sits on the card as "ocean" */
+  --map-land: #e3e8f1;
 }
 
 .dark {
@@ -171,6 +174,9 @@
   --cat-required-fg: #f0788e;
   --cat-none-bg: #1c2130;
   --cat-none-fg: #9aa3b8;
+
+  /* World map: blank (no-data) land sits on the card as "ocean" */
+  --map-land: #2c333f;
 }
 
 @layer base {

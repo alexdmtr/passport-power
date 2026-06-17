@@ -1,17 +1,34 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Globe, Loader2 } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Globe, List, Map } from "lucide-react";
 import { loadPassportDetail } from "@/app/actions";
 import type {
   Cat,
   PassportDetail,
   PassportListItem,
 } from "@/lib/passport";
+import { cn } from "@/lib/utils";
 import { PassportCombobox } from "./passport-combobox";
 import { ScoreSummary } from "./score-summary";
 import { StatGrid } from "./stat-grid";
 import { DestinationList } from "./destination-list";
+import { ResultSkeleton } from "./result-skeleton";
+
+// The map pulls in d3-geo + the bundled TopoJSON; keep it out of the initial
+// bundle and load it only once a passport is selected.
+const WorldMap = dynamic(
+  () => import("./world-map").then((m) => m.WorldMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="bg-card ring-foreground/10 mt-1 aspect-[800/412] w-full animate-pulse rounded-xl ring-1" />
+    ),
+  },
+);
+
+type ViewMode = "map" | "list";
 
 export function PassportExplorer({
   passports,
@@ -20,20 +37,37 @@ export function PassportExplorer({
 }) {
   const [selected, setSelected] = useState<PassportListItem | undefined>();
   const [detail, setDetail] = useState<PassportDetail | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState<Cat | "all">("all");
+  // Only shown for genuinely slow loads — fast loads (the common case) swap
+  // straight to content so the skeleton never flickers.
+  const [showSkeleton, setShowSkeleton] = useState(false);
+  const [filter, setFilter] = useState<Cat | "all">("free");
+  const [viewMode, setViewMode] = useState<ViewMode>("map");
   // Guards against an earlier (slower) request overwriting a newer selection.
   const requestId = useRef(0);
+  // Read in handleSelect without making it a dependency / going stale.
+  const detailRef = useRef(detail);
+  detailRef.current = detail;
 
   async function handleSelect(passport: PassportListItem) {
     setSelected(passport);
-    setFilter("all");
-    setLoading(true);
+    setFilter("free");
     const id = ++requestId.current;
+
+    // Show the skeleton only if we have nothing on screen yet AND the load
+    // is slow. Otherwise the previous passport stays visible until the new
+    // data arrives, then swaps in place — no blank, no flash.
+    let skeletonTimer: ReturnType<typeof setTimeout> | undefined;
+    if (!detailRef.current) {
+      skeletonTimer = setTimeout(() => {
+        if (id === requestId.current) setShowSkeleton(true);
+      }, 200);
+    }
+
     const result = await loadPassportDetail(passport.name);
+    clearTimeout(skeletonTimer);
     if (id !== requestId.current) return; // a newer selection won
     setDetail(result);
-    setLoading(false);
+    setShowSkeleton(false);
   }
 
   return (
@@ -70,12 +104,9 @@ export function PassportExplorer({
           <Globe className="text-muted-foreground/60 mx-auto mb-3 size-14" />
           <p>Choose a passport above to reveal its travel power.</p>
         </div>
-      ) : loading || !detail ? (
-        <div className="text-muted-foreground mt-16 flex items-center justify-center gap-2 text-sm">
-          <Loader2 className="size-4 animate-spin" />
-          Loading {selected.name}…
-        </div>
-      ) : (
+      ) : showSkeleton ? (
+        <ResultSkeleton />
+      ) : detail ? (
         <section className="mt-10">
           <ScoreSummary detail={detail} />
           <StatGrid
@@ -83,13 +114,71 @@ export function PassportExplorer({
             active={filter}
             onToggle={(cat) => setFilter((f) => (f === cat ? "all" : cat))}
           />
-          <DestinationList
-            destinations={detail.destinations}
-            filter={filter}
-            onFilter={setFilter}
-          />
+
+          {/* View toggle */}
+          <div className="mt-5 flex justify-end">
+            <div className="bg-muted inline-flex rounded-lg p-0.5">
+              <ViewToggleButton
+                active={viewMode === "map"}
+                onClick={() => setViewMode("map")}
+                icon={<Map className="size-4" />}
+                label="Map"
+              />
+              <ViewToggleButton
+                active={viewMode === "list"}
+                onClick={() => setViewMode("list")}
+                icon={<List className="size-4" />}
+                label="List"
+              />
+            </div>
+          </div>
+
+          {viewMode === "map" ? (
+            <div className="mt-4">
+              <WorldMap
+                destinations={detail.destinations}
+                filter={filter}
+                homeCode={detail.code}
+                homeName={detail.name}
+              />
+            </div>
+          ) : (
+            <DestinationList
+              destinations={detail.destinations}
+              filter={filter}
+              onFilter={setFilter}
+            />
+          )}
         </section>
-      )}
+      ) : null}
     </div>
+  );
+}
+
+function ViewToggleButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+        active
+          ? "bg-background text-foreground shadow-sm"
+          : "text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
