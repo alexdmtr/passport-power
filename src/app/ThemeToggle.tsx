@@ -21,7 +21,9 @@ export default function ThemeToggle() {
   return (
     <ToggleGroup
       type="single"
-      value={mounted ? theme : undefined}
+      // Always a string so the group stays controlled (avoids the
+      // uncontrolled→controlled warning); empty until the theme is known.
+      value={mounted && theme ? theme : ""}
       onValueChange={(value) => value && setTheme(value)}
       aria-label="Color theme"
       className="bg-card fixed top-4 right-4 z-50 gap-0.5 rounded-full border p-0.5 shadow-sm"

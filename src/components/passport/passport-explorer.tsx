@@ -18,9 +18,18 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { PassportCombobox } from "./passport-combobox";
 import { ScoreSummary } from "./score-summary";
 import { StatGrid } from "./stat-grid";
+import { MobileCategorySwitcher } from "./mobile-category-switcher";
+import { MobilePassportBar } from "./mobile-passport-bar";
 import { DestinationList } from "./destination-list";
 import { ResultSkeleton } from "./result-skeleton";
 
@@ -52,14 +61,23 @@ export function PassportExplorer({
   // categories (entry without a prior visa). Shared by the map and the list.
   const [filter, setFilter] = useState<Set<Cat>>(() => new Set(MOBILITY_CATS));
   const [viewMode, setViewMode] = useState<ViewMode>("map");
-  // When true, re-reveal the landing hero so the user can pick a new passport.
+  // When true, the change-passport picker modal is open.
   const [picking, setPicking] = useState(false);
-  const pickerInputRef = useRef<HTMLInputElement>(null);
 
-  // Focus the search field when the picker is re-opened from the score card.
+  // Mobile: reveal the sticky passport bar only once the score card has
+  // scrolled out of view.
+  const [showBar, setShowBar] = useState(false);
+  const scoreRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (picking) pickerInputRef.current?.focus();
-  }, [picking]);
+    const el = scoreRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setShowBar(!entry.isIntersecting),
+      { threshold: 0 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [detail]);
 
   const toggleCat = (cat: Cat) =>
     setFilter((prev) => {
@@ -79,6 +97,7 @@ export function PassportExplorer({
   async function handleSelect(passport: PassportListItem) {
     setSelected(passport);
     setPicking(false);
+    setShowBar(false);
     setFilter(new Set(MOBILITY_CATS));
     const id = ++requestId.current;
 
@@ -99,18 +118,47 @@ export function PassportExplorer({
     setShowSkeleton(false);
   }
 
-  const showHero = !selected || picking;
+  const showHero = !selected;
 
   return (
     <div>
-      {/* Landing / picker hero — collapses away once a passport is chosen */}
+      {/* Change-passport picker — modal overlay with a blurred backdrop */}
+      <Dialog open={picking} onOpenChange={setPicking}>
+        <DialogContent className="top-[12vh] translate-y-0 gap-4 sm:max-w-md">
+          <DialogHeader className="text-left">
+            <DialogTitle>Change passport</DialogTitle>
+            <DialogDescription>
+              Search and select your passport country.
+            </DialogDescription>
+          </DialogHeader>
+          <PassportCombobox
+            passports={passports}
+            selected={selected}
+            onSelect={handleSelect}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Mobile-only passport bar — slides in once the score card is scrolled past */}
+      {selected && (
+        <MobilePassportBar
+          name={selected.name}
+          code={selected.code}
+          visible={showBar}
+          onChange={() => setPicking(true)}
+        />
+      )}
+
+      {/* Landing / picker hero — collapses away once a passport is chosen.
+          `inert` (vs aria-hidden) keeps the collapsed subtree out of the tab
+          order and the a11y tree, and blurs any focus inside it. */}
       <div
-        aria-hidden={!showHero}
+        inert={!showHero}
         className={cn(
           "grid transition-all duration-500 ease-out motion-reduce:transition-none",
           showHero
             ? "grid-rows-[1fr] opacity-100"
-            : "pointer-events-none grid-rows-[0fr] -translate-y-4 opacity-0",
+            : "grid-rows-[0fr] -translate-y-4 opacity-0",
         )}
       >
         {/* Clip only while collapsing; expanded must overflow so the
@@ -137,7 +185,6 @@ export function PassportExplorer({
                 passports={passports}
                 selected={selected}
                 onSelect={handleSelect}
-                inputRef={pickerInputRef}
               />
             </div>
           </header>
@@ -149,12 +196,23 @@ export function PassportExplorer({
         <ResultSkeleton />
       ) : detail ? (
         <section className="animate-in fade-in slide-in-from-bottom-2 mt-6 duration-500 motion-reduce:animate-none">
-          <ScoreSummary detail={detail} onChange={() => setPicking((p) => !p)} />
-          <StatGrid
-            counts={detail.counts}
-            selected={filter}
-            onToggle={toggleCat}
-          />
+          <div ref={scoreRef}>
+            <ScoreSummary detail={detail} onChange={() => setPicking(true)} />
+          </div>
+
+          {/* Desktop: full 6-category multi-select grid */}
+          <div className="hidden sm:block">
+            <StatGrid
+              counts={detail.counts}
+              selected={filter}
+              onToggle={toggleCat}
+            />
+          </div>
+
+          {/* Mobile: collapsed 3-group single-select switcher */}
+          <div className="mt-5 sm:hidden">
+            <MobileCategorySwitcher selected={filter} onSelectGroup={setCats} />
+          </div>
 
           <Tabs
             value={viewMode}

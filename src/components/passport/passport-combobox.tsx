@@ -1,6 +1,6 @@
 "use client";
 
-import { type Ref, useDeferredValue, useState } from "react";
+import { useDeferredValue, useState } from "react";
 import { Command as CommandPrimitive } from "cmdk";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,12 +17,10 @@ export function PassportCombobox({
   passports,
   selected,
   onSelect,
-  inputRef,
 }: {
   passports: PassportListItem[];
   selected?: PassportListItem;
   onSelect: (passport: PassportListItem) => void;
-  inputRef?: Ref<HTMLInputElement>;
 }) {
   const [query, setQuery] = useState(selected?.name ?? "");
   const [open, setOpen] = useState(false);
@@ -53,7 +51,6 @@ export function PassportCombobox({
           <Search className="text-muted-foreground size-4 shrink-0" />
         )}
         <CommandPrimitive.Input
-          ref={inputRef}
           autoFocus
           value={query}
           onValueChange={(value) => {
