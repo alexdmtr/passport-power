@@ -1,8 +1,16 @@
+import { ChevronsUpDown } from "lucide-react";
 import type { PassportDetail } from "@/lib/passport";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Flag } from "./flag";
 
-export function ScoreSummary({ detail }: { detail: PassportDetail }) {
+export function ScoreSummary({
+  detail,
+  onChange,
+}: {
+  detail: PassportDetail;
+  onChange: () => void;
+}) {
   return (
     <Card className="flex-row items-center gap-5 p-6">
       <Flag
@@ -26,6 +34,15 @@ export function ScoreSummary({ detail }: { detail: PassportDetail }) {
           </span>
         </div>
       </div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onChange}
+        className="ml-auto self-start"
+      >
+        <ChevronsUpDown className="size-4" />
+        Change
+      </Button>
     </Card>
   );
 }

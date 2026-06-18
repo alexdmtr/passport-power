@@ -11,17 +11,24 @@ import {
 } from "@/lib/passport";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Toggle } from "@/components/ui/toggle";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Flag } from "./flag";
+
+// shadcn's default "on" state (bg-muted) is invisible on the light card, so
+// give selected pills a solid fill that clearly reads as active.
+const selectedPillClass =
+  "data-[state=on]:border-foreground data-[state=on]:bg-foreground data-[state=on]:text-background";
 
 export function DestinationList({
   destinations,
   selected,
-  onToggle,
+  onValueChange,
   onSelectAll,
 }: {
   destinations: Destination[];
   selected: Set<Cat>;
-  onToggle: (cat: Cat) => void;
+  onValueChange: (cats: Cat[]) => void;
   onSelectAll: () => void;
 }) {
   const [query, setQuery] = useState("");
@@ -57,26 +64,39 @@ export function DestinationList({
       </div>
 
       {/* Filter pills */}
-      <div className="mb-5 flex flex-wrap gap-2">
-        <FilterPill
-          active={selected.size === STAT_ORDER.length}
-          onClick={onSelectAll}
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <Toggle
+          size="sm"
+          variant="outline"
+          pressed={selected.size === STAT_ORDER.length}
+          onPressedChange={() => onSelectAll()}
+          className={selectedPillClass}
         >
           All
-        </FilterPill>
-        {STAT_ORDER.map((cat) => {
-          const meta = CATEGORY_META[cat];
-          return (
-            <FilterPill
-              key={cat}
-              active={selected.has(cat)}
-              onClick={() => onToggle(cat)}
-            >
-              <span className={cn("size-2 rounded-full", meta.dot)} />
-              {meta.label}
-            </FilterPill>
-          );
-        })}
+        </Toggle>
+        <ToggleGroup
+          type="multiple"
+          size="sm"
+          variant="outline"
+          value={[...selected]}
+          onValueChange={(vals) => onValueChange(vals as Cat[])}
+          className="flex-wrap"
+        >
+          {STAT_ORDER.map((cat) => {
+            const meta = CATEGORY_META[cat];
+            return (
+              <ToggleGroupItem
+                key={cat}
+                value={cat}
+                aria-label={meta.label}
+                className={selectedPillClass}
+              >
+                <span className={cn("size-2 rounded-full", meta.dot)} />
+                {meta.label}
+              </ToggleGroupItem>
+            );
+          })}
+        </ToggleGroup>
       </div>
 
       {/* Grid */}
@@ -114,30 +134,5 @@ export function DestinationList({
         </div>
       )}
     </>
-  );
-}
-
-function FilterPill({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
-        active
-          ? "bg-foreground text-background border-foreground"
-          : "text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {children}
-    </button>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Monitor, Moon, Sun } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const OPTIONS = [
   { value: "light", label: "Light", Icon: Sun },
@@ -19,32 +19,24 @@ export default function ThemeToggle() {
   useEffect(() => setMounted(true), []);
 
   return (
-    <div
-      role="radiogroup"
+    <ToggleGroup
+      type="single"
+      value={mounted ? theme : undefined}
+      onValueChange={(value) => value && setTheme(value)}
       aria-label="Color theme"
-      className="bg-card fixed top-4 right-4 z-50 inline-flex gap-0.5 rounded-full border p-0.5 shadow-sm"
+      className="bg-card fixed top-4 right-4 z-50 gap-0.5 rounded-full border p-0.5 shadow-sm"
     >
-      {OPTIONS.map(({ value, label, Icon }) => {
-        const active = mounted && theme === value;
-        return (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            aria-label={label}
-            title={label}
-            onClick={() => setTheme(value)}
-            className={cn(
-              "grid size-8 cursor-pointer place-items-center rounded-full text-muted-foreground transition-colors",
-              "hover:text-foreground",
-              active && "bg-secondary text-foreground shadow-xs ring-1 ring-border",
-            )}
-          >
-            <Icon className="size-4" />
-          </button>
-        );
-      })}
-    </div>
+      {OPTIONS.map(({ value, label, Icon }) => (
+        <ToggleGroupItem
+          key={value}
+          value={value}
+          aria-label={label}
+          title={label}
+          className="text-muted-foreground size-8 rounded-full data-[state=on]:bg-secondary data-[state=on]:text-foreground data-[state=on]:shadow-xs data-[state=on]:ring-1 data-[state=on]:ring-border"
+        >
+          <Icon className="size-4" />
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type Ref, useDeferredValue, useState } from "react";
 import { Command as CommandPrimitive } from "cmdk";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,17 +17,22 @@ export function PassportCombobox({
   passports,
   selected,
   onSelect,
+  inputRef,
 }: {
   passports: PassportListItem[];
   selected?: PassportListItem;
   onSelect: (passport: PassportListItem) => void;
+  inputRef?: Ref<HTMLInputElement>;
 }) {
   const [query, setQuery] = useState(selected?.name ?? "");
   const [open, setOpen] = useState(false);
 
   // Show the dropdown only once the user is actively typing, so the default
-  // state is a clean, focused input inviting them to type.
-  const showList = open && query.trim().length > 0;
+  // state is a clean, focused input inviting them to type. Deferring the query
+  // here keeps the keystroke painting immediately while the (large) list
+  // mounts/filters in a lower-priority render.
+  const deferredQuery = useDeferredValue(query);
+  const showList = open && deferredQuery.trim().length > 0;
   const showFlag = selected && query === selected.name;
 
   return (
@@ -48,6 +53,7 @@ export function PassportCombobox({
           <Search className="text-muted-foreground size-4 shrink-0" />
         )}
         <CommandPrimitive.Input
+          ref={inputRef}
           autoFocus
           value={query}
           onValueChange={(value) => {
