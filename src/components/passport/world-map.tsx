@@ -80,7 +80,7 @@ export function WorldMap({
           aria-label={`World map of visa requirements for the ${homeName ?? "selected"} passport`}
         >
           <g>
-            {features.map((f) => {
+            {features.map((f, i) => {
               const iso2 = numericToIso2(f.id);
               const isHome = !!homeCode && iso2 === homeCode.toUpperCase();
               const dest = iso2 ? byIso2.get(iso2) : undefined;
@@ -95,7 +95,9 @@ export function WorldMap({
 
               return (
                 <path
-                  key={String(f.id)}
+                  // Some features (Kosovo, N. Cyprus, Somaliland) have no id;
+                  // the static index is a stable, unique key.
+                  key={i}
                   d={pathGen(f) ?? undefined}
                   style={{
                     fill,
