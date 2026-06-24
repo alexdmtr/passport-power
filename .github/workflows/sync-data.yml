@@ -1,0 +1,42 @@
+name: Sync passport data
+
+# Keeps src/data/passport-index-tidy.csv current with the upstream
+# ilyankou/passport-index-dataset. Runs weekly (and on demand); commits only
+# when the data actually changed. The push triggers Vercel's normal deploy.
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-passport-data
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Rebuild CSV from upstream
+        run: node scripts/sync-passport-data.mjs
+
+      - name: Commit if changed
+        run: |
+          if [[ -z "$(git status --porcelain src/data/passport-index-tidy.csv)" ]]; then
+            echo "No upstream changes — nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/passport-index-tidy.csv
+          git commit -m "chore(data): sync passport index from upstream"
+          git push

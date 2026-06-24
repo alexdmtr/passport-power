@@ -24,6 +24,17 @@ global `localStorage` stub that crashes `next dev` during SSR
 (`localStorage.getItem is not a function`). If `nvm`/`fnm` is installed,
 `nvm use` picks up `.nvmrc`.
 
+## Data source — don't hand-edit the CSV
+
+`src/data/passport-index-tidy.csv` is **generated**, not hand-maintained. It's
+rebuilt from the upstream `ilyankou/passport-index-dataset` by
+`scripts/sync-passport-data.mjs`, which joins the upstream names file
+(`passport-index-tidy.csv`) with the ISO-2 file (`passport-index-tidy-iso2.csv`)
+row-by-row to add the `ISO2_Code` column. The `.github/workflows/sync-data.yml`
+action runs this weekly and commits any change (which triggers a Vercel deploy).
+To refresh manually: run the script, or trigger the workflow via `workflow_dispatch`.
+Edit the upstream dataset, not this file.
+
 ## Architecture & data flow (the important part)
 
 The CSV is ~40k rows (`src/data/passport-index-tidy.csv`). **It must never be
